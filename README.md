@@ -26,10 +26,10 @@ You have found an Issue, have a question or you would like to suggest changes re
 ## Release steps
 
 - `build/build.sh`
-- `git commit -am 'prepare release ExtensionUpdates 1.0.5'`
-- `git tag -s '1.0.5' -m 'ExtensionUpdates 1.0.5'`
+- `git commit -am 'prepare release ExtensionUpdates 1.0.6'`
+- `git tag -s '1.0.6' -m 'ExtensionUpdates 1.0.6'`
 - `git push origin --tags`
-- `gh release create 1.0.5 --notes "" --title "ExtensionUpdates Task Plugin (Fork) 1.0.5" 'build/plg_task_extensionupdates.zip#ExtensionUpdates Task Plugin (Fork) 1.0.5'` 
+- `gh release create 1.0.6 --notes "" --title "ExtensionUpdates Task Plugin (Fork) 1.0.6" 'build/plg_task_extensionupdates.zip#ExtensionUpdates Task Plugin (Fork) 1.0.6'` 
 - `git push origin master`
 
 
