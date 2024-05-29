@@ -28,18 +28,9 @@ You have found an Issue, have a question or you would like to suggest changes re
 ## Release steps
 
 - `build/build.sh`
-- `git commit -am 'prepare release ExtensionUpdates 1.0.2'`
-- `git tag -s '1.0.2' -m 'ExtensionUpdates 1.0.2'`
+- `git commit -am 'prepare release ExtensionUpdates 1.0.3'`
+- `git tag -s '1.0.3' -m 'ExtensionUpdates 1.0.3'`
 - `git push origin --tags`
-- `gh release create 1.0.2 build/plg_task_extensionupdates.zip`
+- `gh release create 1.0.3 build/plg_task_extensionupdates.zip`
 - `git push origin master`
 
-## Crowdin
-
-### Upload new strings
-
-`crowdin upload sources`
-
-### Download translations
-
-`crowdin download --skip-untranslated-files --ignore-match`

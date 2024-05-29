@@ -147,7 +147,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
          * The plugins should modify the $uri object directly and return null.
          */
         //really depricated code in a new plugin
-       // $this->getApplication()->triggerEvent('onBuildAdministratorLoginURL', [&$uri]);
+        // $this->getApplication()->triggerEvent('onBuildAdministratorLoginURL', [&$uri]);
 
         // Let's find out the email addresses to notify
         $superUsers = [];
@@ -161,7 +161,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         }
 
         if (empty($superUsers)) {
-            
+
             return Status::KNOCKOUT;
         }
 
@@ -187,10 +187,10 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             'updatelink'    => $uri->toString(),
         ];
 
-     
-        $body = [$this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_HEADER',count($updates)), $baseSubstitutions)."\n\n"];
-        $subject = $this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SUBJECT',count($updates)), $baseSubstitutions);
-      
+
+        $body = [$this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_HEADER', count($updates)), $baseSubstitutions) . "\n\n"];
+        $subject = $this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SUBJECT', count($updates)), $baseSubstitutions);
+
 
         foreach ($updates as $updateId => $updateValue) {
 
@@ -200,7 +200,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             } else {
                 $extensionName = ExtensionHelper::getExtensionRecord($updateValue->element, $updateValue->type)->name;
             }
-           
+
             // Replace merge codes with their values
             $extensionSubstitutions = [
                 'newversion'    => $updateValue->version,
@@ -210,26 +210,26 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
                 'extensionname' => $extensionName,
             ];
 
-            $body[]= $this->replaceTags(Text::_('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SINGLE'), $extensionSubstitutions) ."\n";
+            $body[] = $this->replaceTags(Text::_('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SINGLE'), $extensionSubstitutions) . "\n";
         }
 
         $body[] = $this->replaceTags(Text::_('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_FOOTER'), $baseSubstitutions);
 
-       $body= join("\n",$body);
-       $this->logTask($body);
+        $body = join("\n", $body);
+        $this->logTask($body);
 
         // Send the emails to the Super Users
 
         try {
-            
+
             $mail = clone Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
             $mailfrom =   $this->getApplication()->get('mailfrom');
-            $fromname = $this->getApplication()->get('fromname'); 
+            $fromname = $this->getApplication()->get('fromname');
 
             if (MailHelper::isEmailAddress($mailfrom)) {
                 $mail->setSender(MailHelper::cleanLine($mailfrom), MailHelper::cleanLine($fromname), false);
             }
- 
+
             $mail->setBody($body);
             $mail->setSubject($subject);
             $mail->SMTPDebug = false;
@@ -239,13 +239,13 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             foreach ($superUsers as $superUser) {
                 $mail->addBcc($superUser->email);
             }
-           
+
             $mail->send();
         } catch (MailDisabledException | phpMailerException $exception) {
             try {
                 $this->logTask($jLanguage->_($exception->getMessage()));
             } catch (\RuntimeException $exception) {
-             
+
                 return Status::KNOCKOUT;
             }
         }
@@ -257,8 +257,18 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         return Status::OK;
     }
 
+    /**
+     * Method to replace tags like in MailTemplate
+     *
+     * @param   string  $text  The `language string`.
+     * @param   array  $tags  key replacment pairs
+     *
+     * @return string  The text with replaces tags
+     *
+     * @since  1.0.1
+     */
 
-    protected function replaceTags($text, $tags)
+    protected function replaceTags(string $text, array $tags)
     {
         foreach ($tags as $key => $value) {
             // If the value is NULL, replace with an empty string. NULL itself throws notices
@@ -295,17 +305,17 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         return $text;
     }
 
-   
+
     /**
      * Returns the Super Users email information. If you provide a comma separated $email list
-     * we will check that these emails do belong to Super Users and that they have not blocked
-     * system emails.
+     * we will check that these emails do belong to Super Users
+     * this version overrides the sendemail parameter in the user settings
      *
      * @param   null|string  $email  A list of Super Users to email
      *
      * @return  array  The list of Super User emails
      *
-     * @since   3.5
+     * @since   1.0.1
      */
     private function getSuperUsers($email = null)
     {
@@ -328,7 +338,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
 
         try {
             $rootId = (new Asset($db))->getRootId();
-          
+
             $rules     = Access::getAssetRules($rootId)->getData();
             $rawGroups = $rules['core.admin']->getData();
             $groups    = [];
