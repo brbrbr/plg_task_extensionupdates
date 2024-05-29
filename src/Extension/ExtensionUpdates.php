@@ -298,9 +298,11 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
                 ->where($db->quoteName('block') . ' = 0')
                 ->where($db->quoteName('sendEmail') . ' = 1');
 
-            if (!empty($emails)) {
+              if (!empty($emails)) {
                 $lowerCaseEmails = array_map('strtolower', $emails);
                 $query->whereIn('LOWER(' . $db->quoteName('email') . ')', $lowerCaseEmails, ParameterType::STRING);
+            } else {
+                $query->where($db->quoteName('sendEmail') . ' = 1');
             }
 
             $db->setQuery($query);
