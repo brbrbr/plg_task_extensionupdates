@@ -28,6 +28,7 @@ use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\Mail\MailHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Asset;
+use Joomla\Utilities\ArrayHelper;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -90,9 +91,17 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
     private function checkExtensionUpdates(ExecuteTaskEvent $event): int
     {
         $this->logTask('ExtensionUpdates start');
+        $params=$event->getArgument('params');
         // Load the parameters.
-        $specificEmail  = $event->getArgument('params')->email ?? '';
-        $forcedLanguage = $event->getArgument('params')->language_override ?? '';
+
+        $recipients =ArrayHelper::fromObject($params->recipients ?? [],false);
+   
+        $specificIds=array_map(function ($item) {
+            return $item->user;
+        },$recipients);
+       
+    
+        $forcedLanguage = $params->language_override ?? '';
 
         $joomlaUpdateModel = $this->getApplication()->bootComponent('com_joomlaupdate')
             ->getMVCFactory()->createModel('Update', 'Administrator', ['ignore_request' => true]);
@@ -152,18 +161,19 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         // Let's find out the email addresses to notify
         $superUsers = [];
 
-        if (!empty($specificEmail)) {
-            $superUsers = $this->getSuperUsers($specificEmail);
+        if (!empty($specificIds)) {
+            $superUsers = $this->getSuperUsers($specificIds);
         }
-
+  
         if (empty($superUsers)) {
             $superUsers = $this->getSuperUsers();
         }
-
+     
         if (empty($superUsers)) {
-
+            $this->logTask('No recipients found');
             return Status::KNOCKOUT;
         }
+      
 
         /*
          * Load the appropriate language. We try to load English (UK), the current user's language and the forced
@@ -191,7 +201,6 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         $body = [$this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_HEADER', count($updates)), $baseSubstitutions) . "\n\n"];
         $subject = $this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SUBJECT', count($updates)), $baseSubstitutions);
 
-
         foreach ($updates as $updateId => $updateValue) {
 
             // Get the extension name from the database; We need a special handling for plugins here
@@ -216,7 +225,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         $body[] = $this->replaceTags(Text::_('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_FOOTER'), $baseSubstitutions);
 
         $body = join("\n", $body);
-        $this->logTask($body);
+       
 
         // Send the emails to the Super Users
 
@@ -237,7 +246,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             $mail->isHtml(false);
 
             foreach ($superUsers as $superUser) {
-                $mail->addBcc($superUser->email);
+                $mail->addBcc($superUser->email,$superUser->name);
             }
 
             $mail->send();
@@ -311,34 +320,21 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
      * we will check that these emails do belong to Super Users
      * this version overrides the sendemail parameter in the user settings
      *
-     * @param   null|string  $email  A list of Super Users to email
+     * @param   null|array  $userIds  A list of Super Users to email
      *
      * @return  array  The list of Super User emails
      *
      * @since   1.0.1
      */
-    private function getSuperUsers($email = null)
+    private function getSuperUsers(?array $userIds = null)
     {
         $db     = $this->getDatabase();
-        $emails = [];
-
-        // Convert the email list to an array
-        if (!empty($email)) {
-            $temp   = explode(',', $email);
-
-            foreach ($temp as $entry) {
-                $emails[] = trim($entry);
-            }
-
-            $emails = array_unique($emails);
-        }
-
+      
         // Get a list of groups which have Super User privileges
         $ret = [];
 
         try {
             $rootId = (new Asset($db))->getRootId();
-
             $rules     = Access::getAssetRules($rootId)->getData();
             $rawGroups = $rules['core.admin']->getData();
             $groups    = [];
@@ -360,41 +356,22 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             return $ret;
         }
 
-        // Get the user IDs of users belonging to the SA groups
-        try {
-            $query = $db->getQuery(true)
-                ->select($db->quoteName('user_id'))
-                ->from($db->quoteName('#__user_usergroup_map'))
-                ->whereIn($db->quoteName('group_id'), $groups);
-
-            $db->setQuery($query);
-
-
-            $userIDs = $db->loadColumn(0);
-
-            if (empty($userIDs)) {
-                return $ret;
-            }
-        } catch (\Exception $exc) {
-            return $ret;
-        }
-
+       
         // Get the user information for the Super Administrator users
         try {
             $query = $db->getQuery(true)
-                ->select($db->quoteName(['id', 'username', 'email']))
-                ->from($db->quoteName('#__users'))
-                ->whereIn($db->quoteName('id'), $userIDs)
+                ->select($db->quoteName([ 'name', 'email']))
+                ->from($db->quoteName('#__users','u'))
+                ->join('INNER',$db->quoteName('#__user_usergroup_map','m'),'`u`.`id` = `m`.`user_id`')
+                ->whereIn($db->quoteName('m.group_id'), $groups, ParameterType::INTEGER)
                 ->where($db->quoteName('block') . ' = 0');
 
-
-            if (!empty($emails)) {
-                $lowerCaseEmails = array_map('strtolower', $emails);
-                $query->whereIn('LOWER(' . $db->quoteName('email') . ')', $lowerCaseEmails, ParameterType::STRING);
+            if (!empty($userIds)) {
+                $query->whereIn( $db->quoteName('id') , $userIds, ParameterType::INTEGER);
             } else {
                 $query->where($db->quoteName('sendEmail') . ' = 1');
             }
-
+          
             $db->setQuery($query);
             $ret = $db->loadObjectList();
         } catch (\Exception $exc) {

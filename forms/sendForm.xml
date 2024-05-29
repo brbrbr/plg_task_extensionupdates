@@ -1,14 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form>
+<form >
 	<fields name="params">
-		<fieldset name="task_params">
-			<field
-				name="email"
-				type="text"
+		<fieldset name="task_params" addfieldprefix="Joomla\Plugin\Task\ExtensionUpdates\Field">
+
+
+			  <field name="recipients" showon="email!:0" type="subform" label="PLG_TASK_EXTENSIONUPDATES_EMAILS_LBL" description="PLG_TASK_EXTENSIONUPDATES_EMAIL_DESC" multiple="true">
+          <form>
+           <field
+				name="user"
+				type="user"
 				label="PLG_TASK_EXTENSIONUPDATES_EMAIL_LBL"
-				description="PLG_TASK_EXTENSIONUPDATES_EMAIL_DESC"
+				
 				default=""
+			
+			
 			/>
+          </form>
+        </field>
+				
 			<field
 				name="language_override"
 				type="language"
