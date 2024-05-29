@@ -23,14 +23,13 @@ Any other plugin version I may have added to the download section don't get upda
 You have found an Issue, have a question or you would like to suggest changes regarding this extension?
 [Open an issue in this repo](https://github.com/brbrbr/plg_task_extensionupdates/issues/new) or submit a pull request with the proposed changes.
 
-
-
 ## Release steps
 
 - `build/build.sh`
-- `git commit -am 'prepare release ExtensionUpdates 1.0.4'`
-- `git tag -s '1.0.4' -m 'ExtensionUpdates 1.0.4'`
+- `git commit -am 'prepare release ExtensionUpdates 1.0.5'`
+- `git tag -s '1.0.5' -m 'ExtensionUpdates 1.0.5'`
 - `git push origin --tags`
-- `gh release create 1.0.4 build/plg_task_extensionupdates.zip`
+- `gh release create 1.0.5 --notes "" --title "ExtensionUpdates Task Plugin (Fork) 1.0.5" 'build/plg_task_extensionupdates.zip#ExtensionUpdates Task Plugin (Fork) 1.0.5'` 
 - `git push origin master`
+
 
