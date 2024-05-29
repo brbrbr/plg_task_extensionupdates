@@ -13,7 +13,7 @@ use Joomla\CMS\Access\Access;
 use Joomla\CMS\Extension\ExtensionHelper;
 use Joomla\CMS\Mail\Exception\MailDisabledException;
 use Joomla\CMS\Plugin\CMSPlugin;
-use Joomla\CMS\Table\Table;
+
 use Joomla\CMS\Updater\Updater;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Language\Text;
@@ -27,6 +27,7 @@ use PHPMailer\PHPMailer\Exception as phpMailerException;
 use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\Mail\MailHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Table\Asset;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -325,7 +326,8 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         $ret = [];
 
         try {
-            $rootId    = Table::getInstance('Asset')->getRootId();
+            $rootId = (new Asset($db))->getRootId();
+          
             $rules     = Access::getAssetRules($rootId)->getData();
             $rawGroups = $rules['core.admin']->getData();
             $groups    = [];
