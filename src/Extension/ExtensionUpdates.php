@@ -12,12 +12,11 @@ namespace Joomla\Plugin\Task\ExtensionUpdates\Extension;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Extension\ExtensionHelper;
 use Joomla\CMS\Mail\Exception\MailDisabledException;
-use Joomla\CMS\Mail\MailTemplate;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Table\Table;
 use Joomla\CMS\Updater\Updater;
 use Joomla\CMS\Uri\Uri;
-use Joomla\CMS\Version;
+use Joomla\CMS\Language\Text;
 use Joomla\Component\Scheduler\Administrator\Event\ExecuteTaskEvent;
 use Joomla\Component\Scheduler\Administrator\Task\Status;
 use Joomla\Component\Scheduler\Administrator\Traits\TaskPluginTrait;
@@ -25,6 +24,9 @@ use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use Joomla\Event\SubscriberInterface;
 use PHPMailer\PHPMailer\Exception as phpMailerException;
+use Joomla\CMS\Mail\MailerFactoryInterface;
+use Joomla\CMS\Mail\MailHelper;
+use Joomla\CMS\Factory;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -86,6 +88,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
      */
     private function checkExtensionUpdates(ExecuteTaskEvent $event): int
     {
+        $this->logTask('ExtensionUpdates start');
         // Load the parameters.
         $specificEmail  = $event->getArgument('params')->email ?? '';
         $forcedLanguage = $event->getArgument('params')->language_override ?? '';
@@ -130,7 +133,6 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
 
 
         //TODO
-
         /**
          * Some third party security solutions require a secret query parameter to allow log in to the administrator
          * backend of the site. The link generated above will be invalid and could probably block the user out of their
@@ -157,6 +159,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         }
 
         if (empty($superUsers)) {
+            
             return Status::KNOCKOUT;
         }
 
@@ -176,49 +179,121 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             $jLanguage->load('plg_task_extensionupdates', JPATH_ADMINISTRATOR, $forcedLanguage, true, false);
         }
 
+        $baseSubstitutions = [
+            'sitename'      => $this->getApplication()->get('sitename'),
+            'url'           => Uri::base(),
+            'updatelink'    => $uri->toString(),
+        ];
+
+     
+        $body = [$this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_HEADER',count($updates)), $baseSubstitutions)."\n\n"];
+        $subject = $this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SUBJECT',count($updates)), $baseSubstitutions);
+      
+
         foreach ($updates as $updateId => $updateValue) {
 
             // Get the extension name from the database; We need a special handling for plugins here
             if ($updateValue->type === 'plugin') {
                 $extensionName = ExtensionHelper::getExtensionRecord($updateValue->element, $updateValue->type, $updateValue->client_id, $updateValue->folder)->name;
-            }
-            else {
+            } else {
                 $extensionName = ExtensionHelper::getExtensionRecord($updateValue->element, $updateValue->type)->name;
             }
-
+           
             // Replace merge codes with their values
-            $substitutions = [
+            $extensionSubstitutions = [
                 'newversion'    => $updateValue->version,
                 'curversion'    => $updateValue->current_version,
-				'sitename'      => $this->getApplication()->get('sitename'),
-                'url'           => Uri::base(),
-                'updatelink'    => $uri->toString(),
-				'extensiontype' => $updateValue->type,
-				'extensionname' => $extensionName,
+                'sitename'      => $this->getApplication()->get('sitename'),
+                'extensiontype' => $updateValue->type,
+                'extensionname' => $extensionName,
             ];
 
-            // Send the emails to the Super Users
+            $body[]= $this->replaceTags(Text::_('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SINGLE'), $extensionSubstitutions) ."\n";
+        }
+
+        $body[] = $this->replaceTags(Text::_('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_FOOTER'), $baseSubstitutions);
+
+       $body= join("\n",$body);
+       $this->logTask($body);
+
+        // Send the emails to the Super Users
+
+        try {
+            
+            $mail = clone Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
+            $mailfrom =   $this->getApplication()->get('mailfrom');
+            $fromname = $this->getApplication()->get('fromname'); 
+
+            if (MailHelper::isEmailAddress($mailfrom)) {
+                $mail->setSender(MailHelper::cleanLine($mailfrom), MailHelper::cleanLine($fromname), false);
+            }
+ 
+            $mail->setBody($body);
+            $mail->setSubject($subject);
+            $mail->SMTPDebug = false;
+            $mail->SMTPOptions = ['ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true]];
+            $mail->isHtml(false);
+
             foreach ($superUsers as $superUser) {
-                try {
-                    $mailer = new MailTemplate('plg_task_extensionupdates.extension_update', $jLanguage->getTag());
-                    $mailer->addRecipient($superUser->email);
-                    $mailer->addTemplateData($substitutions);
-                    $mailer->send();
-                } catch (MailDisabledException | phpMailerException $exception) {
-                    try {
-                        $this->logTask($jLanguage->_($exception->getMessage()));
-                    } catch (\RuntimeException $exception) {
-                        return Status::KNOCKOUT;
-                    }
-                }
+                $mail->addBcc($superUser->email);
+            }
+           
+            $mail->send();
+        } catch (MailDisabledException | phpMailerException $exception) {
+            try {
+                $this->logTask($jLanguage->_($exception->getMessage()));
+            } catch (\RuntimeException $exception) {
+             
+                return Status::KNOCKOUT;
             }
         }
+
+
 
         $this->logTask('ExtensionUpdates end');
 
         return Status::OK;
     }
 
+
+    protected function replaceTags($text, $tags)
+    {
+        foreach ($tags as $key => $value) {
+            // If the value is NULL, replace with an empty string. NULL itself throws notices
+            if (\is_null($value)) {
+                $value = '';
+            }
+
+            if (\is_array($value)) {
+                $matches = [];
+                $pregKey = preg_quote(strtoupper($key), '/');
+
+                if (preg_match_all('/{' . $pregKey . '}(.*?){\/' . $pregKey . '}/s', $text, $matches)) {
+                    foreach ($matches[0] as $i => $match) {
+                        $replacement = '';
+
+                        foreach ($value as $name => $subvalue) {
+                            if (\is_array($subvalue) && $name == $matches[1][$i]) {
+                                $replacement .= implode("\n", $subvalue);
+                            } elseif (\is_array($subvalue)) {
+                                $replacement .= $this->replaceTags($matches[1][$i], $subvalue);
+                            } elseif (\is_string($subvalue) && $name == $matches[1][$i]) {
+                                $replacement .= $subvalue;
+                            }
+                        }
+
+                        $text = str_replace($match, $replacement, $text);
+                    }
+                }
+            } else {
+                $text = str_replace('{' . strtoupper($key) . '}', $value, $text);
+            }
+        }
+
+        return $text;
+    }
+
+   
     /**
      * Returns the Super Users email information. If you provide a comma separated $email list
      * we will check that these emails do belong to Super Users and that they have not blocked
@@ -280,6 +355,8 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
                 ->whereIn($db->quoteName('group_id'), $groups);
 
             $db->setQuery($query);
+
+
             $userIDs = $db->loadColumn(0);
 
             if (empty($userIDs)) {
@@ -295,10 +372,10 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
                 ->select($db->quoteName(['id', 'username', 'email']))
                 ->from($db->quoteName('#__users'))
                 ->whereIn($db->quoteName('id'), $userIDs)
-                ->where($db->quoteName('block') . ' = 0')
-                ->where($db->quoteName('sendEmail') . ' = 1');
+                ->where($db->quoteName('block') . ' = 0');
 
-              if (!empty($emails)) {
+
+            if (!empty($emails)) {
                 $lowerCaseEmails = array_map('strtolower', $emails);
                 $query->whereIn('LOWER(' . $db->quoteName('email') . ')', $lowerCaseEmails, ParameterType::STRING);
             } else {
