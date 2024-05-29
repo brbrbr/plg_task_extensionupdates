@@ -15,16 +15,8 @@
 		<folder>forms</folder>
 		<folder>language</folder>
 		<folder plugin="extensionupdates">services</folder>
-		<folder>sql</folder>
 		<folder>src</folder>
 	</files>
-	<update>
-		<schemas>
-			<schemapath type="mysql">sql/mysql/updates</schemapath>
-			<schemapath type="postgresql">sql/postgresql/updates</schemapath>
-			<schemapath type="pgsql">sql/postgresql/updates</schemapath>
-		</schemas>
-	</update>
 	<updateservers>
 		<server type="extension" name="ExtensionUpdates Update Site">https://raw.githubusercontent.com/brbrbr/plg_task_extensionupdates/master/update.xml</server>
 	</updateservers>
