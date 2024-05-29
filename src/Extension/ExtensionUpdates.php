@@ -146,7 +146,8 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
          *
          * The plugins should modify the $uri object directly and return null.
          */
-        $this->getApplication()->triggerEvent('onBuildAdministratorLoginURL', [&$uri]);
+        //really depricated code in a new plugin
+       // $this->getApplication()->triggerEvent('onBuildAdministratorLoginURL', [&$uri]);
 
         // Let's find out the email addresses to notify
         $superUsers = [];
