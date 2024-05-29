@@ -10,9 +10,9 @@
 		<version>1.0.6</version>
 		<infourl title="ExtensionUpdates Plugin">https://github.com/brbrbr/plg_task_extensionupdates</infourl>
 		<downloads>
-			<downloadurl type="full" format="zip">https://github.com/brbrbr/plg_task_extensionupdates/releases/download/1.0.5/plg_task_extensionupdates.zip</downloadurl>
+			<downloadurl type="full" format="zip">https://github.com/brbrbr/plg_task_extensionupdates/releases/download/1.0.6/plg_task_extensionupdates.zip</downloadurl>
 		</downloads>
-		<sha512>ed49c80132bd211d4f32a18715d23920b2d4ab276312e1c5cf806a7f946b419f2d735ddc14a4e13ec02518d27b22006e253e2a03ddc799d36bd3fabe84e4298c</sha512>
+		<sha512>1d6edea361cf2ba842fb520f629b362033cf9940fb2431cb0d1ba35f6e58526e7789e79ae457dd64f945c37d35b9e190fe3eab61de0758ee74efda058f856be8</sha512>
 		<tags>
 			<tag>stable</tag>
 		</tags>
