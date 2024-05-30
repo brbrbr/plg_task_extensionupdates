@@ -110,7 +110,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         // Get any available updates
         $updater = Updater::getInstance();
         $results = $updater->findUpdates($eids, 0);
-
+    
         // If there are no updates our job is done. We need BOTH this check AND the one below.
         if (!$results) {
             return [];
@@ -119,8 +119,13 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         // Get the update model and retrieve the Joomla! core updates
         $installerModel = $this->getApplication()->bootComponent('com_installer')
             ->getMVCFactory()->createModel('Update', 'Administrator', ['ignore_request' => true]);
+
         if ($core) {
             $installerModel->setState('filter.extension_id', $coreEid);
+        } else {
+            //All extensions but not Joomla! Core
+            //UpdateModel::getListQuery
+            $installerModel->setState('filter.extension_id', Null);
         }
         $updates = $installerModel->getItems();
 
@@ -130,7 +135,6 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             //I don't think this is really needed, since the findUpdates/getItems checks 
             // Get the available update
             $update = array_pop($updates);
-
             // Check the available version. If it's the same or less than the installed version we have no updates to notify about.
             if (version_compare($update->version, JVERSION, 'le')) {
                 return [];
