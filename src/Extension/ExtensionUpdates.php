@@ -180,7 +180,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
       
 
        
-        $baseURL = Route::link('administrator', 'index.php?option=com_cpanel&view=cpanel&dashboard=system');
+        $baseURL = Route::link('administrator', 'index.php?option=com_cpanel&view=cpanel&dashboard=system',absolute:true);
 
         //TODO
         /**

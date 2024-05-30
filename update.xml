@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <updates>
 	<update>
-		<name>Task - ExtensionUpdates (Fork)</name>
+		<name>Task - ExtensionUpdates</name>
 		<description>ExtensionUpdates Plugin</description>
 		<element>extensionupdates</element>
 		<type>plugin</type>
