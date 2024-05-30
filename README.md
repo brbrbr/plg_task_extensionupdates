@@ -30,10 +30,10 @@ If you have found an Issue, have a question or you would like to suggest changes
 ## Release steps
 
 - `build/build.sh`
-- `git commit -am 'prepare release Extension & Core Updates 1.0.9'`
-- `git tag -s '1.0.9' -m 'Extension & Core Updates  1.0.9'`
+- `git commit -am 'prepare release Extension & Core Updates 1.0.8'`
+- `git tag -s '1.0.8' -m 'Extension & Core Updates  1.0.8'`
 - `git push origin --tags`
-- `gh release create 1.0.9 --notes "" --title "Extension & Core Updates Task Plugin 1.0.9" 'build/plg_task_extensionupdates.zip#Extension & Core Updates Task Plugin 1.0.9'` 
+- `gh release create 1.0.8 --notes "" --title "Extension & Core Updates Task Plugin 1.0.8" 'build/plg_task_extensionupdates.zip#Extension & Core Updates Task Plugin 1.0.8'` 
 - `git push origin master`
 
 
