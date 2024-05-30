@@ -65,7 +65,7 @@ class Transient extends Table
         $this->version_data = json_encode($data);
         $this->version_note = $note;
         $result = $this->store();
-      
+
         return $result;
     }
 
@@ -118,7 +118,7 @@ class Transient extends Table
     public function getHashMatch(string $itemId, string $sha1Hash)
     {
         $db       = $this->_db;
-        $query    = $db->getQuery(true);
+        $query = $db->createQuery();
         $query->select('*')
             ->from($db->quoteName('#__history'))
             ->where($db->quoteName('item_id') . ' = :item_id')
@@ -144,11 +144,10 @@ class Transient extends Table
     public function deleteOldVersions($maxVersions)
     {
         $result = true;
-
         // Get the list of version_id values we want to save
         $db        = $this->_db;
-        $itemId    = $this->get('item_id');
-        $query     = $db->getQuery(true);
+        $itemId    = $this->item_id;
+        $query = $db->createQuery();
         $query->select($db->quoteName('version_id'))
             ->from($db->quoteName('#__history'))
             ->where($db->quoteName('item_id') . ' = :item_id')
@@ -163,8 +162,8 @@ class Transient extends Table
         // Don't process delete query unless we have at least the maximum allowed versions
         if (\count($idsToSave) === (int) $maxVersions) {
             // Delete any rows not in our list and and not flagged to keep forever.
-            $query = $db->getQuery(true);
-            $query->delete($db->quoteName('#__history'))
+            $query = $db->createQuery()
+                ->delete($db->quoteName('#__history'))
                 ->where($db->quoteName('item_id') . ' = :item_id')
                 ->whereNotIn($db->quoteName('version_id'), $idsToSave)
                 ->where($db->quoteName('keep_forever') . ' != 1')

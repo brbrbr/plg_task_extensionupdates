@@ -10,7 +10,7 @@
  * @license GNU General Public License version 3 or later;
  */
 
- // phpcs:disable PSR1.Files.SideEffects
+// phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
@@ -43,19 +43,20 @@ return new class() implements ServiceProviderInterface
                 {
                     $this->app = $app;
                     $this->db  = Factory::getContainer()->get(DatabaseInterface::class);
-					$this->minimumJoomla = '5.1';
-					$this->minimumPhp    = '8.1';
+                    $this->minimumJoomla = '5.1';
+                    $this->minimumPhp    = '8.1';
                 }
 
                 public function install(InstallerAdapter $adapter): bool
                 {
-                    $query = $this->db->getquery(true);
+                    $db        = $this->db;
+                    $query = $db->createQuery();
                     $query->update('`#__extensions`')
                         ->set('`enabled` = 1')
                         ->where('`type` = \'plugin\'')
-                        ->where('`folder` = ' . $this->db->quote($adapter->group))
-                        ->where('`element` = ' . $this->db->quote($adapter->element));
-                    $this->db->setQuery($query)->execute();
+                        ->where('`folder` = ' . $db->quote($adapter->group))
+                        ->where('`element` = ' . $db->quote($adapter->element));
+                    $db->setQuery($query)->execute();
                     return true;
                 }
 
@@ -66,9 +67,18 @@ return new class() implements ServiceProviderInterface
 
                 public function uninstall(InstallerAdapter $adapter): bool
                 {
+                    $db        = $this->db;
+                    $itemId    = 'ExtensionUpdates.%';
+                    $query = $db->createQuery();
+                    $query->delete($db->quoteName('#__history'))
+                        ->where($db->quoteName('item_id') . ' like :item_id')
+                        ->bind(':item_id', $itemId, ParameterType::STRING);
+                    $db->setQuery($query);
+                    $db->execute();
                     return true;
                 }
-				public function preflight($type, $adapter): bool
+                
+                public function preflight($type, $adapter): bool
                 {
                     if ($type !== 'uninstall') {
                         // Check for the minimum PHP version before continuing
@@ -90,7 +100,7 @@ return new class() implements ServiceProviderInterface
                             return false;
                         }
                     }
-           
+
 
                     return true;
                 }

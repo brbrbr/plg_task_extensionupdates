@@ -281,6 +281,8 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             $hasRecipient = false;
             foreach ($superUsers as $superUser) {
                 $itemId = 'ExtensionUpdates.email.' . $superUser->id;
+                $transientManager->deleteOldVersions(1);
+                return Status::OK;
                 if ($sendOnce === false || !$transientManager->getHashMatch($itemId, $sha1)) {
                     $hasRecipient = true;
                     $mail->addBcc($superUser->email, $superUser->name);
@@ -290,7 +292,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
                         'editor_user_id' => $superUser->id
                     ]);
                     $transientManager->storeTransient($transientData, 'transient');
-                    $transientManager->deleteOldVersions(1);
+                 
                 }
             }
 
@@ -416,7 +418,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
 
         // Get the user information for the Super Administrator users
         try {
-            $query = $db->getQuery(true)
+            $query = $db->createQuery()
                 ->select($db->quoteName(['id', 'name', 'email']))
                 ->from($db->quoteName('#__users', 'u'))
                 ->join('INNER', $db->quoteName('#__user_usergroup_map', 'm'), '`u`.`id` = `m`.`user_id`')
