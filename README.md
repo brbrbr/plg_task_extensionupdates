@@ -1,6 +1,8 @@
-# ExtensionUpdates Plugin
+# Extension & Core Updates Notification Plugin
 
-This Joomla plugin checks for updates of extensions and sends an eMail once available, the code is based on the core plg_task_updatenotification plugin.
+This Joomla plugin checks for updates of extensions & Joomla! Core and sends an eMail once available.
+
+The code is based on the core plg_task_updatenotification plugin and https://github.com/zero-24/plg_task_extensionupdates
 
 ## Configuration
 
@@ -10,26 +12,28 @@ This Joomla plugin checks for updates of extensions and sends an eMail once avai
 - Install the plugin using `Upload & Install`
 - Enable the plugin `Task - ExtensionUpdates` from the plugin manager
 - Setup the new Task Plugin `System -> Scheduled Tasks -> New -> ExtensionUpdates`
-
+-- Add one or more recipients. These must be Super Users. If no recipient is set (or none of the selected recipients is a Super User anymore) all Super Users with *Receive System Emails* enabled will receive an email
+-- With *Send Once* to *Yes* emails will only be send once. Untill the list of extension-update changes. Otherwise an email is send on each Task Execution
+- Disable the Core update notifications task if present.
 Now the inital setup is completed, please make sure that the cron has been fully setup in the best cases it should use the WebCron setting.
 
-### Update Server
+## Minimum Requirements
+- Joomla 5.1
+- PHP 8.1
 
-Please note that my update server only supports the latest version running the latest version of Joomla and atleast PHP 8.1.
-Any other plugin version I may have added to the download section don't get updates using the update server.
 
 ## Issues / Pull Requests
 
-You have found an Issue, have a question or you would like to suggest changes regarding this extension?
+If you have found an Issue, have a question or you would like to suggest changes regarding this extension?
 [Open an issue in this repo](https://github.com/brbrbr/plg_task_extensionupdates/issues/new) or submit a pull request with the proposed changes.
 
 ## Release steps
 
 - `build/build.sh`
-- `git commit -am 'prepare release ExtensionUpdates 1.0.9'`
-- `git tag -s '1.0.9' -m 'ExtensionUpdates 1.0.9'`
+- `git commit -am 'prepare release Extension & Core Updates 1.0.9'`
+- `git tag -s '1.0.9' -m 'Extension & Core Updates  1.0.9'`
 - `git push origin --tags`
-- `gh release create 1.0.9 --notes "" --title "ExtensionUpdates Task Plugin (Fork) 1.0.9" 'build/plg_task_extensionupdates.zip#ExtensionUpdates Task Plugin (Fork) 1.0.9'` 
+- `gh release create 1.0.9 --notes "" --title "Extension & Core Updates Task Plugin 1.0.9" 'build/plg_task_extensionupdates.zip#Extension & Core Updates Task Plugin 1.0.9'` 
 - `git push origin master`
 
 
