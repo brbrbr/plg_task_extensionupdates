@@ -62,11 +62,10 @@ class Transient extends Table
      */
     public  function storeTransient($data, $note = 'transient')
     {
-
         $this->version_data = json_encode($data);
         $this->version_note = $note;
         $result = $this->store();
-        $this->deleteOldVersions(1);
+      
         return $result;
     }
 
@@ -87,10 +86,7 @@ class Transient extends Table
         if (!isset($this->sha1_hash)) {
             $this->sha1_hash = $this->getSha1($this->version_data);
         }
-
         // Modify author and date only when not toggling Keep Forever
-
-
         $this->save_date =  Factory::getDate()->toSql();
         return parent::store($updateNulls);
     }

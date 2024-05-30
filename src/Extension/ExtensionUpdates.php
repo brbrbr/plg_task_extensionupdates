@@ -15,6 +15,7 @@ use Joomla\CMS\Mail\Exception\MailDisabledException;
 use Joomla\CMS\Plugin\CMSPlugin;
 
 use Joomla\CMS\Updater\Updater;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Language\Text;
 use Joomla\Component\Scheduler\Administrator\Event\ExecuteTaskEvent;
@@ -29,6 +30,7 @@ use Joomla\CMS\Mail\MailHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Asset;
 use Joomla\Utilities\ArrayHelper;
+use Joomla\Plugin\Task\ExtensionUpdates\Table\Transient;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -78,6 +80,71 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         ];
     }
 
+
+    /**
+     * Method to send the update notification.
+     *
+     *
+     * @return array  List of updates
+     *
+     * @since  1.0.8
+     * @throws \Exception
+     */
+
+
+    private function getExtensionsWithUpdate($core = false)
+    {
+        if ($core) {
+            $coreEid = ExtensionHelper::getExtensionRecord('joomla', 'file')->extension_id;
+            $eids = [$coreEid];
+        } else {
+            $joomlaUpdateModel = $this->getApplication()->bootComponent('com_joomlaupdate')
+                ->getMVCFactory()->createModel('Update', 'Administrator', ['ignore_request' => true]);
+
+            $noneCoreExtensionIds = $joomlaUpdateModel->getNonCoreExtensions();
+            foreach ($noneCoreExtensionIds as $key => $value) {
+                $eids[] = $value->extension_id;
+            }
+        }
+
+        // Get any available updates
+        $updater = Updater::getInstance();
+        $results = $updater->findUpdates($eids, 0);
+
+        // If there are no updates our job is done. We need BOTH this check AND the one below.
+        if (!$results) {
+            return [];
+        }
+
+        // Get the update model and retrieve the Joomla! core updates
+        $installerModel = $this->getApplication()->bootComponent('com_installer')
+            ->getMVCFactory()->createModel('Update', 'Administrator', ['ignore_request' => true]);
+        if ($core) {
+            $installerModel->setState('filter.extension_id', $coreEid);
+        }
+        $updates = $installerModel->getItems();
+
+
+        if ($core) {
+            //taken from UpdateNotification
+            //I don't think this is really needed, since the findUpdates/getItems checks 
+            // Get the available update
+            $update = array_pop($updates);
+
+            // Check the available version. If it's the same or less than the installed version we have no updates to notify about.
+            if (version_compare($update->version, JVERSION, 'le')) {
+                return [];
+            }
+            $update->type = 'core';
+            $updates = [$update];
+        }
+        // If there are no updates we don't have to notify anyone about anything. This is NOT a duplicate check.
+        if (empty($updates)) {
+            return [];
+        }
+        return $updates;
+    }
+
     /**
      * Method to send the update notification.
      *
@@ -91,56 +158,29 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
     private function checkExtensionUpdates(ExecuteTaskEvent $event): int
     {
         $this->logTask('ExtensionUpdates start');
-        $params=$event->getArgument('params');
-        // Load the parameters.
 
-        $recipients =ArrayHelper::fromObject($params->recipients ?? [],false);
-   
-        $specificIds=array_map(function ($item) {
+        // Load the parameters.
+        $params = $event->getArgument('params');
+        $recipients = ArrayHelper::fromObject($params->recipients ?? [], false);
+        $sendOnce = (bool)($params->send_once ?? true);
+        $specificIds = array_map(function ($item) {
             return $item->user;
-        },$recipients);
-       
-    
+        }, $recipients);
         $forcedLanguage = $params->language_override ?? '';
 
-        $joomlaUpdateModel = $this->getApplication()->bootComponent('com_joomlaupdate')
-            ->getMVCFactory()->createModel('Update', 'Administrator', ['ignore_request' => true]);
 
-        $noneCoreExtensionIds = $joomlaUpdateModel->getNonCoreExtensions();
+        $extensionUpdates = $this->getExtensionsWithUpdate();
+        $coreUpdates = $this->getExtensionsWithUpdate(true);
+        $allUpdates = array_merge($coreUpdates, $extensionUpdates);
 
-        foreach ($noneCoreExtensionIds as $key => $value) {
-            $eids[] = $value->extension_id;
-        }
-
-        // Get any available updates
-        $updater = Updater::getInstance();
-
-        $results = $updater->findUpdates($eids, 0);
-
-        // If there are no updates our job is done. We need BOTH this check AND the one below.
-        if (!$results) {
+        if (\count($allUpdates) == 0) {
+            $this->logTask('No Updates found');
             return Status::OK;
         }
+      
 
-        // Get the update model and retrieve the Joomla! core updates
-        $installerModel = $this->getApplication()->bootComponent('com_installer')
-            ->getMVCFactory()->createModel('Update', 'Administrator', ['ignore_request' => true]);
-
-        //$installerModel->setState('filter.extension_id', $eids);
-        $updates = $installerModel->getItems();
-
-        // If there are no updates we don't have to notify anyone about anything. This is NOT a duplicate check.
-        if (empty($updates)) {
-            return Status::OK;
-        }
-
-        // If we're here, we have updates. First, get a link to the Joomla! Installer component.
-        $baseURL  = Uri::base();
-        $baseURL  = rtrim($baseURL, '/');
-        $baseURL .= (substr($baseURL, -13) !== 'administrator') ? '/administrator/' : '/';
-        $baseURL .= 'index.php?option=com_installer&view=update';
-        $uri      = new Uri($baseURL);
-
+       
+        $baseURL = Route::link('administrator', 'index.php?option=com_cpanel&view=cpanel&dashboard=system');
 
         //TODO
         /**
@@ -164,16 +204,16 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         if (!empty($specificIds)) {
             $superUsers = $this->getSuperUsers($specificIds);
         }
-  
+
         if (empty($superUsers)) {
             $superUsers = $this->getSuperUsers();
         }
-     
+
         if (empty($superUsers)) {
             $this->logTask('No recipients found');
             return Status::KNOCKOUT;
         }
-      
+
 
         /*
          * Load the appropriate language. We try to load English (UK), the current user's language and the forced
@@ -193,30 +233,27 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
 
         $baseSubstitutions = [
             'sitename'      => $this->getApplication()->get('sitename'),
-            'url'           => Uri::base(),
-            'updatelink'    => $uri->toString(),
+            'updatelink'    => $baseURL,
         ];
 
 
-        $body = [$this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_HEADER', count($updates)), $baseSubstitutions) . "\n\n"];
-        $subject = $this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SUBJECT', count($updates)), $baseSubstitutions);
+        $body = [$this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_HEADER', count($allUpdates)), $baseSubstitutions) . "\n\n"];
+        $subject = $this->replaceTags(Text::plural('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SUBJECT', count($allUpdates)), $baseSubstitutions);
 
-        foreach ($updates as $updateId => $updateValue) {
+        foreach ($allUpdates as  $updateValue) {
+
 
             // Get the extension name from the database; We need a special handling for plugins here
-            if ($updateValue->type === 'plugin') {
-                $extensionName = ExtensionHelper::getExtensionRecord($updateValue->element, $updateValue->type, $updateValue->client_id, $updateValue->folder)->name;
-            } else {
-                $extensionName = ExtensionHelper::getExtensionRecord($updateValue->element, $updateValue->type)->name;
-            }
+
+
+
 
             // Replace merge codes with their values
             $extensionSubstitutions = [
                 'newversion'    => $updateValue->version,
                 'curversion'    => $updateValue->current_version,
-                'sitename'      => $this->getApplication()->get('sitename'),
                 'extensiontype' => $updateValue->type,
-                'extensionname' => $extensionName,
+                'extensionname' => $updateValue->name,
             ];
 
             $body[] = $this->replaceTags(Text::_('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_SINGLE'), $extensionSubstitutions) . "\n";
@@ -225,31 +262,52 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         $body[] = $this->replaceTags(Text::_('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_FOOTER'), $baseSubstitutions);
 
         $body = join("\n", $body);
-       
+
+
 
         // Send the emails to the Super Users
 
         try {
 
             $mail = clone Factory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
-            $mailfrom =   $this->getApplication()->get('mailfrom');
-            $fromname = $this->getApplication()->get('fromname');
+            $transientManager = new Transient($this->getDatabase(), $this->getDispatcher());
 
-            if (MailHelper::isEmailAddress($mailfrom)) {
-                $mail->setSender(MailHelper::cleanLine($mailfrom), MailHelper::cleanLine($fromname), false);
-            }
+            $transientData = [
+                'body' => $body,
+                'subject' => $subject
+            ];
+            $sha1 = $transientManager->getSha1($transientData);
 
-            $mail->setBody($body);
-            $mail->setSubject($subject);
-            $mail->SMTPDebug = false;
-            $mail->SMTPOptions = ['ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true]];
-            $mail->isHtml(false);
-
+            $hasRecipient = false;
             foreach ($superUsers as $superUser) {
-                $mail->addBcc($superUser->email,$superUser->name);
+                $itemId = 'ExtensionUpdates.email.' . $superUser->id;
+                if ($sendOnce === false || !$transientManager->getHashMatch($itemId, $sha1)) {
+                    $hasRecipient = true;
+                    $mail->addBcc($superUser->email, $superUser->name);
+                    $transientManager->bind([
+                        'sha1_hash' => $sha1,
+                        'item_id' => $itemId,
+                        'editor_user_id' => $superUser->id
+                    ]);
+                    $transientManager->storeTransient($transientData, 'transient');
+                    $transientManager->deleteOldVersions(1);
+                }
             }
 
-            $mail->send();
+            if ($hasRecipient) {
+                $mailfrom =   $this->getApplication()->get('mailfrom');
+                $fromname = $this->getApplication()->get('fromname');
+
+                if (MailHelper::isEmailAddress($mailfrom)) {
+                    $mail->setSender(MailHelper::cleanLine($mailfrom), MailHelper::cleanLine($fromname), false);
+                }
+                $mail->setBody($body);
+                $mail->setSubject($subject);
+                $mail->SMTPDebug = false;
+                $mail->SMTPOptions = ['ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true]];
+                $mail->isHtml(false);
+                $mail->send();
+            }
         } catch (MailDisabledException | phpMailerException $exception) {
             try {
                 $this->logTask($jLanguage->_($exception->getMessage()));
@@ -258,7 +316,6 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
                 return Status::KNOCKOUT;
             }
         }
-
 
 
         $this->logTask('ExtensionUpdates end');
@@ -329,7 +386,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
     private function getSuperUsers(?array $userIds = null)
     {
         $db     = $this->getDatabase();
-      
+
         // Get a list of groups which have Super User privileges
         $ret = [];
 
@@ -356,22 +413,22 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             return $ret;
         }
 
-       
+
         // Get the user information for the Super Administrator users
         try {
             $query = $db->getQuery(true)
-                ->select($db->quoteName([ 'name', 'email']))
-                ->from($db->quoteName('#__users','u'))
-                ->join('INNER',$db->quoteName('#__user_usergroup_map','m'),'`u`.`id` = `m`.`user_id`')
+                ->select($db->quoteName(['id', 'name', 'email']))
+                ->from($db->quoteName('#__users', 'u'))
+                ->join('INNER', $db->quoteName('#__user_usergroup_map', 'm'), '`u`.`id` = `m`.`user_id`')
                 ->whereIn($db->quoteName('m.group_id'), $groups, ParameterType::INTEGER)
                 ->where($db->quoteName('block') . ' = 0');
 
             if (!empty($userIds)) {
-                $query->whereIn( $db->quoteName('id') , $userIds, ParameterType::INTEGER);
+                $query->whereIn($db->quoteName('id'), $userIds, ParameterType::INTEGER);
             } else {
                 $query->where($db->quoteName('sendEmail') . ' = 1');
             }
-          
+
             $db->setQuery($query);
             $ret = $db->loadObjectList();
         } catch (\Exception $exc) {

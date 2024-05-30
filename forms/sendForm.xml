@@ -2,30 +2,16 @@
 <form >
 	<fields name="params">
 		<fieldset name="task_params" addfieldprefix="Joomla\Plugin\Task\ExtensionUpdates\Field">
-
-
-			  <field name="recipients" showon="email!:0" type="subform" label="PLG_TASK_EXTENSIONUPDATES_EMAILS_LBL" description="PLG_TASK_EXTENSIONUPDATES_EMAIL_DESC" multiple="true">
-          <form>
-           <field
-				name="user"
-				type="user"
-				label="PLG_TASK_EXTENSIONUPDATES_EMAIL_LBL"
-				
-				default=""
-			
-			
-			/>
-          </form>
-        </field>
-				
-			<field
-				name="language_override"
-				type="language"
-				label="PLG_TASK_EXTENSIONUPDATES_LANGUAGE_OVERRIDE_LBL"
-				description="PLG_TASK_EXTENSIONUPDATES_LANGUAGE_OVERRIDE_DESC"
-				default=""
-				client="administrator"
-				>
+			<field name="recipients" showon="email!:0" type="subform" label="PLG_TASK_EXTENSIONUPDATES_EMAILS_LBL" description="PLG_TASK_EXTENSIONUPDATES_EMAIL_DESC" multiple="true">
+				<form>
+					<field name="user" type="user" label="PLG_TASK_EXTENSIONUPDATES_EMAIL_LBL" default="" />
+				</form>
+			</field>
+			<field name="send_once" type="radio" label="PLG_TASK_EXTENSIONUPDATES_EMAILONCE_LBL" description="PLG_TASK_EXTENSIONUPDATES_EMAILONCE_DESC" default="1" layout="joomla.form.field.radio.switcher" filter="integer">
+				<option value="0">JNo</option>
+				<option value="1">JYes</option>
+			</field>
+			<field name="language_override" type="language" label="PLG_TASK_EXTENSIONUPDATES_LANGUAGE_OVERRIDE_LBL" description="PLG_TASK_EXTENSIONUPDATES_LANGUAGE_OVERRIDE_DESC" default="" client="administrator">
 				<option value="">PLG_TASK_EXTENSIONUPDATES_LANGUAGE_OVERRIDE_NONE</option>
 			</field>
 		</fieldset>
