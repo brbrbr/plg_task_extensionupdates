@@ -12,7 +12,7 @@
 		<downloads>
 			<downloadurl type="full" format="zip">https://github.com/brbrbr/plg_task_extensionupdates/releases/download/24.51.10/plg_task_extensionupdates.zip</downloadurl>
 		</downloads>
-		<sha512>6cd5e079d9573adcf76b5dee15d5e81d95f74730b0474c640a21a5975b5976b7af3271ef0a17d336ffc1d22d42c29332b897d971b653fda4d78e9d34c5bbe351</sha512>
+		<sha512>d4542521e2d94fe2a074b2108cd378ca840cac13fcf03803a0a3c7acb1e8c6eb01b5bf7e6cc8fe6c120a98f30fc0ef53a0b8827f1fea56d741d40c9f3d96e056</sha512>
 		<tags>
 			<tag>stable</tag>
 		</tags>
