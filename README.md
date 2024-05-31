@@ -24,6 +24,7 @@ The code is based on the core plg_task_updatenotification plugin and https://git
 
 Now the initial setup is completed, please make sure that the cron has been fully setup. Either using *Lazy Scheduler* or *Web Cron* in the *Scheduled Tasks Configuration*
 
+You can change the emails for your language in the language overrides
 
 
 ## Minimum Requirements
