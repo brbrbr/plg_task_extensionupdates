@@ -184,7 +184,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
       
 
        
-        $baseURL = Route::link('administrator', 'index.php?option=com_cpanel&view=cpanel&dashboard=system',absolute:true);
+        $baseURL = Route::link('administrator', 'index.php?option=com_cpanel&view=cpanel&dashboard=system', xhtml : false,absolute:true);
 
         //TODO
         /**
@@ -246,12 +246,6 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
 
         foreach ($allUpdates as  $updateValue) {
 
-
-            // Get the extension name from the database; We need a special handling for plugins here
-
-
-
-
             // Replace merge codes with their values
             $extensionSubstitutions = [
                 'newversion'    => $updateValue->version,
@@ -266,8 +260,6 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
         $body[] = $this->replaceTags(Text::_('PLG_TASK_EXTENSIONUPDATES_UPDATE_MAIL_FOOTER'), $baseSubstitutions);
 
         $body = join("\n", $body);
-
-
 
         // Send the emails to the Super Users
 
