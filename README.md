@@ -18,7 +18,7 @@ The code is based on the core plg_task_updatenotification plugin and https://git
 - The plugin should be enabled automaticity.
 - Set up the new Task Plugin `System -> Scheduled Tasks -> New -> All Updates Notification`
 -- Add one or more recipients. These must be Super Users. If no recipient is set (or none of the selected recipients is a Super User anymore) all Super Users with `Receive System Emails` enabled will receive an email
--- With `Send Once` to **Yes**, emails will only be sent once. Until the list of available updates changes. Otherwise, an email is sent on each Task Execution
+-- With `Send Once` to **Yes**, emails will only be sent once, until the list of available updates changes. Otherwise, an email is sent on each Task Execution
 - Disable the Core update notifications task if present.
 
 
