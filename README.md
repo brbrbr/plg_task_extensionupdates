@@ -1,7 +1,7 @@
 # Extension & Core Updates Notification Plugin
 
 
-This Joomla plugin checks for updates of extensions & Joomla! Core and sends an eMail once available.
+This Joomla plugin checks for updates of **extensions** & **Joomla!** Core and sends an email once available.
 
 
 The code is based on the core plg_task_updatenotification plugin and https://github.com/zero-24/plg_task_extensionupdates
@@ -19,7 +19,7 @@ The code is based on the core plg_task_updatenotification plugin and https://git
 - Set up the new Task Plugin `System -> Scheduled Tasks -> New -> All Updates Notification`
 -- Add one or more recipients. These must be Super Users. If no recipient is set (or none of the selected recipients is a Super User anymore) all Super Users with `Receive System Emails` enabled will receive an email
 -- With `Send Once` to **Yes**, emails will only be sent once, until the list of available updates changes. Otherwise, an email is sent on each Task Execution
-- Disable the Core update notifications task if present.
+- Disable the Core update notifications task, if present.
 
 
 Now the initial setup is completed, please make sure that the cron has been fully setup. Either using *Lazy Scheduler* or *Web Cron* in the *Scheduled Tasks Configuration*

@@ -1,23 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension type="plugin" group="task" method="upgrade">
-	<name>plg_task_extensionupdates</name>
-	<author>Tobias Zulauf</author>
-	<creationDate>2024-05-14</creationDate>
-	<copyright>Copyright (C) 2024 Tobias Zulauf (jah-tz.de). All rights reserved.</copyright>
-	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
-	<authorEmail>kontakt@jah-tz.de</authorEmail>
-	<authorUrl>www.jah-tz.de</authorUrl>
-	<version>24.51.10</version>
-	<description>PLG_TASK_EXTENSIONUPDATES_XML_DESCRIPTION</description>
-	<namespace path="src">Joomla\Plugin\Task\ExtensionUpdates</namespace>
-	 <scriptfile>script.php</scriptfile>
-	<files>
-		<folder>forms</folder>
-		<folder>language</folder>
-		<folder plugin="extensionupdates">services</folder>
-		<folder>src</folder>
-	</files>
-	<updateservers>
-		<server type="extension" name="ExtensionUpdates Update Site">https://raw.githubusercontent.com/brbrbr/plg_task_extensionupdates/master/update.xml</server>
-	</updateservers>
+  <name>plg_task_extensionupdates</name>
+  <author>Bram Brambring</author>
+  <creationDate>2024-05-14</creationDate>
+  <copyright>Copyright (C) 2024 Bram Brambrin (brokenlinkchecker.dev). All rights reserved.</copyright>
+  <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+  <authorEmail>joomla@brambring.nl</authorEmail>
+  <authorUrl>https://brambring.nl</authorUrl>
+  <version>24.51.10</version>
+  <description>PLG_TASK_EXTENSIONUPDATES_XML_DESCRIPTION</description>
+  <namespace path="src">Joomla\Plugin\Task\ExtensionUpdates</namespace>
+  <scriptfile>script.php</scriptfile>
+  <languages folder="language">
+    <language tag="de-DE">de-DE/plg_task_extensionupdates.ini</language>
+    <language tag="de-DE">de-DE/plg_task_extensionupdates.sys.ini</language>
+    <language tag="en-GB">en-GB/plg_task_extensionupdates.ini</language>
+    <language tag="en-GB">en-GB/plg_task_extensionupdates.sys.ini</language>
+    <language tag="nl-NL">nl-NL/plg_task_extensionupdates.ini</language>
+    <language tag="nl-NL">nl-NL/plg_task_extensionupdates.sys.ini</language>
+  </languages>
+  <files>
+    <folder>forms</folder>
+    <folder>language</folder>
+    <folder plugin="extensionupdates">services</folder>
+    <folder>src</folder>
+  </files>
+  <updateservers>
+    <server type="extension" name="ExtensionUpdates Update Site">https://raw.githubusercontent.com/brbrbr/plg_task_extensionupdates/master/update.xml</server>
+  </updateservers>
 </extension>
