@@ -1,7 +1,7 @@
 #!/bin/bash
 EXTENSION_ZIP_FILENAME="build/plg_task_extensionupdates.zip"
 EXTENSION_ELEMENT="extensionupdates"
-VERSION="24.51.11"
+VERSION="24.51.12"
 if [ ! -f "$EXTENSION_ELEMENT.xml" ]; then cd ..; fi
 if [ -f "$EXTENSION_ZIP_FILENAME" ]; then rm $EXTENSION_ZIP_FILENAME; fi
 

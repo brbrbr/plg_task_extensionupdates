@@ -7,7 +7,7 @@
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
 	<authorEmail>joomla@brambring.nl</authorEmail>
 	<authorUrl>https://brambring.nl</authorUrl>
-	<version>24.51.11</version>
+	<version>24.51.12</version>
 	<description>PLG_TASK_EXTENSIONUPDATES_XML_DESCRIPTION</description>
 	<namespace path="src">Joomla\Plugin\Task\ExtensionUpdates</namespace>
 	 <scriptfile>script.php</scriptfile>
