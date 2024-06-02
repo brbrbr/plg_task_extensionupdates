@@ -3,21 +3,18 @@
 /**
  * ExtensionUpdates Task Plugin
  *
- * @copyright  Copyright (C) 2024 Tobias Zulauf All rights reserved.
- * @copyright  Copyright (C) 2024 Bram Brambring All rights reserved.
+ * @copyright Copyright (C) 2024 Tobias Zulauf All rights reserved.
+ * @copyright Copyright (C) 2024 Bram Brambring All rights reserved.
  * @license    http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License Version 2 or later
  */
 
 namespace Joomla\Plugin\Task\ExtensionUpdates\Extension;
 
 use Joomla\CMS\Access\Access;
-use Joomla\CMS\Extension\ExtensionHelper;
 use Joomla\CMS\Mail\Exception\MailDisabledException;
 use Joomla\CMS\Plugin\CMSPlugin;
 
-use Joomla\CMS\Updater\Updater;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Language\Text;
 use Joomla\Component\Scheduler\Administrator\Event\ExecuteTaskEvent;
 use Joomla\Component\Scheduler\Administrator\Task\Status;
@@ -83,8 +80,8 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
 
 
     /**
-     * Method to send the update notification.
-     *
+     * Method to get the updates.
+     * From update:extensions:check
      *
      * @return array  List of updates
      *
@@ -93,61 +90,19 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
      */
 
 
-    private function getExtensionsWithUpdate($core = false)
+    private function getExtensionsWithUpdate()
     {
-        if ($core) {
-            $coreEid = ExtensionHelper::getExtensionRecord('joomla', 'file')->extension_id;
-            $eids = [$coreEid];
-        } else {
-            $joomlaUpdateModel = $this->getApplication()->bootComponent('com_joomlaupdate')
-                ->getMVCFactory()->createModel('Update', 'Administrator', ['ignore_request' => true]);
-
-            $noneCoreExtensionIds = $joomlaUpdateModel->getNonCoreExtensions();
-            foreach ($noneCoreExtensionIds as $key => $value) {
-                $eids[] = $value->extension_id;
-            }
-        }
-
-        // Get any available updates
-        $updater = Updater::getInstance();
-        $results = $updater->findUpdates($eids, 0);
-    
-        // If there are no updates our job is done. We need BOTH this check AND the one below.
-        if (!$results) {
-            return [];
-        }
-
-        // Get the update model and retrieve the Joomla! core updates
-        $installerModel = $this->getApplication()->bootComponent('com_installer')
+        // Find updates.
+        /** @var UpdateModel $model */
+        $model = $this->getApplication()->bootComponent('com_installer')
             ->getMVCFactory()->createModel('Update', 'Administrator', ['ignore_request' => true]);
 
-        if ($core) {
-            $installerModel->setState('filter.extension_id', $coreEid);
-        } else {
-            //All extensions but not Joomla! Core
-            //UpdateModel::getListQuery
-            $installerModel->setState('filter.extension_id', Null);
-        }
-        $updates = $installerModel->getItems();
+        // Purge the table before checking
+        // $model->purge();
 
+        $model->findUpdates();
 
-        if ($core) {
-            //taken from UpdateNotification
-            //I don't think this is really needed, since the findUpdates/getItems checks 
-            // Get the available update
-            $update = array_pop($updates);
-            // Check the available version. If it's the same or less than the installed version we have no updates to notify about.
-            if (version_compare($update->version, JVERSION, 'le')) {
-                return [];
-            }
-            $update->type = 'core';
-            $updates = [$update];
-        }
-        // If there are no updates we don't have to notify anyone about anything. This is NOT a duplicate check.
-        if (empty($updates)) {
-            return [];
-        }
-        return $updates;
+        return $model->getItems();
     }
 
     /**
@@ -162,6 +117,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
      */
     private function checkExtensionUpdates(ExecuteTaskEvent $event): int
     {
+
         $this->logTask('ExtensionUpdates start');
 
         // Load the parameters.
@@ -172,20 +128,17 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             return $item->user;
         }, $recipients);
         $forcedLanguage = $params->language_override ?? '';
+        $allUpdates = $this->getExtensionsWithUpdate();
 
-
-        $extensionUpdates = $this->getExtensionsWithUpdate();
-        $coreUpdates = $this->getExtensionsWithUpdate(true);
-        $allUpdates = array_merge($coreUpdates, $extensionUpdates);
 
         if (\count($allUpdates) == 0) {
             $this->logTask('No Updates found');
             return Status::OK;
         }
-      
 
-       
-        $baseURL = Route::link('administrator', 'index.php?option=com_cpanel&view=cpanel&dashboard=system', xhtml : false,absolute:true);
+
+
+        $baseURL = Route::link('administrator', 'index.php?option=com_cpanel&view=cpanel&dashboard=system', xhtml: false, absolute: true);
 
         //TODO
         /**
@@ -228,11 +181,14 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
          * solution!
          */
         $jLanguage = $this->getApplication()->getLanguage();
+        $jLanguage->load('lib_joomla', JPATH_ADMINISTRATOR, 'en-GB', true, true);
+        $jLanguage->load('lib_joomla', JPATH_ADMINISTRATOR, null, true, true);
         $jLanguage->load('plg_task_extensionupdates', JPATH_ADMINISTRATOR, 'en-GB', true, true);
         $jLanguage->load('plg_task_extensionupdates', JPATH_ADMINISTRATOR, null, true, false);
 
         // Then try loading the preferred (forced) language
         if (!empty($forcedLanguage)) {
+            $jLanguage->load('lib_joomla', JPATH_ADMINISTRATOR, $forcedLanguage, true, false);
             $jLanguage->load('plg_task_extensionupdates', JPATH_ADMINISTRATOR, $forcedLanguage, true, false);
         }
 
