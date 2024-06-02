@@ -13,7 +13,7 @@ namespace Joomla\Plugin\Task\ExtensionUpdates\Extension;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Mail\Exception\MailDisabledException;
 use Joomla\CMS\Plugin\CMSPlugin;
-
+use Joomla\CMS\Extension\ExtensionHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Language\Text;
 use Joomla\Component\Scheduler\Administrator\Event\ExecuteTaskEvent;
@@ -90,7 +90,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
      */
 
 
-    private function getExtensionsWithUpdate()
+    private function getExtensionsWithUpdate($core = false)
     {
         // Find updates.
         /** @var UpdateModel $model */
@@ -98,7 +98,13 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             ->getMVCFactory()->createModel('Update', 'Administrator', ['ignore_request' => true]);
 
         // Purge the table before checking
-        // $model->purge();
+        // $model->purge();  
+        if ($core) {
+            $coreEid = ExtensionHelper::getExtensionRecord('joomla', 'file')->extension_id;
+            $model->setState('filter.extension_id', $coreEid);
+        } else {
+            $model->setState('filter.extension_id', null);
+        }
 
         $model->findUpdates();
 
@@ -128,15 +134,14 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
             return $item->user;
         }, $recipients);
         $forcedLanguage = $params->language_override ?? '';
-        $allUpdates = $this->getExtensionsWithUpdate();
-
+        $extensionUpdates = $this->getExtensionsWithUpdate();
+        $coreUpdates = $this->getExtensionsWithUpdate(true);
+        $allUpdates = array_merge($coreUpdates, $extensionUpdates);
 
         if (\count($allUpdates) == 0) {
             $this->logTask('No Updates found');
             return Status::OK;
         }
-
-
 
         $baseURL = Route::link('administrator', 'index.php?option=com_cpanel&view=cpanel&dashboard=system', xhtml: false, absolute: true);
 
