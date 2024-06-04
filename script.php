@@ -23,6 +23,7 @@ use Joomla\CMS\Installer\InstallerScriptInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 use Joomla\CMS\Language\Text;
+use Joomla\Database\ParameterType;
 
 // phpcs:disable PSR12.Classes.AnonClassDeclaration
 return new class() implements ServiceProviderInterface
@@ -38,13 +39,13 @@ return new class() implements ServiceProviderInterface
             {
                 protected AdministratorApplication $app;
                 protected DatabaseDriver $db;
+                private string $minimumJoomla='5.1';
+                private string $minimumPhp='8.1';
 
                 public function __construct(AdministratorApplication $app)
                 {
                     $this->app = $app;
                     $this->db  = Factory::getContainer()->get(DatabaseInterface::class);
-                    $this->minimumJoomla = '5.1';
-                    $this->minimumPhp    = '8.1';
                 }
 
                 public function install(InstallerAdapter $adapter): bool
