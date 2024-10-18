@@ -76,7 +76,7 @@ final class ExtensionUpdates extends CMSPlugin implements SubscriberInterface
     /**
      * Method to send the update notification.
      *
-     * @param   ExecuteTaskEvent  $event  The `onExecuteTask` event.
+     * @param   ExecuteTaskEvent  $event  The 'onExecuteTask' event.
      *
      * @return integer  The routine exit code.
      *
